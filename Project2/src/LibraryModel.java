@@ -6,23 +6,193 @@
 
 
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+
 import javax.swing.*;
 
 public class LibraryModel {
 
     // For use in creating dialogs and making them modal
     private JFrame dialogParent;
+    private Connection connection;
 
-    public LibraryModel(JFrame parent, String userid, String password) {
+    public LibraryModel(JFrame parent, String userid, String password){
 	dialogParent = parent;
-    }
+	try {
+		Class.forName("org.postgresql.Driver");
+	} catch (ClassNotFoundException e) {
 
+		e.printStackTrace();
+	}
+	
+	String url = "jdbc:postgresql://db.ecs.vuw.ac.nz/" + userid + "_jdbc";
+	try {
+		connection = DriverManager.getConnection(url, userid, password); 
+	} catch (SQLException e){
+		e.printStackTrace();
+	}
+	System.out.print("DATABASE CONNECT");
+    }
+    
+    /**
+     * Querys a book based on an isbn number and returns the title, edition_no, numofcop, surnames of authors, numleft
+     * @param isbn
+     * @return
+     */
     public String bookLookup(int isbn) {
-	return "Lookup Book Stub";
+   
+    	    	String query = ""
+    			+ "SELECT title, edition_no, numofcop, surname, numleft "
+    			+ "FROM book_author "
+    			+ "NATURAL JOIN book "
+    			+ "NATURAL JOIN author "
+    			+ "WHERE isbn = " + isbn 
+    			+ "ORDER BY authorseqno";
+      	
+    	try {
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery(query);
+			
+			
+			
+			String title = "";
+			int edition_no = -1;
+			int numofcop = -1;
+			int numleft = -1;
+			ArrayList<String> authors = new ArrayList<String>(); 
+			
+			
+			/**
+			 * Check for authorless books, if none do full query
+			 */
+			if(!rs.isBeforeFirst()){
+				query = ""
+		    			+ "SELECT title, edition_no, numofcop, numleft "
+		    			+ "FROM book "
+		    			+ "WHERE isbn = " + isbn;
+				statement = connection.createStatement();
+				rs = statement.executeQuery(query);
+				
+				if(!rs.isBeforeFirst()){
+					return "no such ISBN: " + isbn;
+				}
+				while(rs.next()){
+						title = rs.getString("title");
+						edition_no = rs.getInt("edition_no");
+						numofcop = rs.getInt("numofcop");
+						numleft = rs.getInt("numleft");
+				}
+				String result = ""
+		    			+ "Book Lookup:\n"
+		    			+ "\t" + isbn + ": " + title + "\n" 
+		    			+ "\tEdition: " + edition_no + " - Number of copies: " + numofcop + " - Copies left: " + numleft + "\n"
+						+ "\tAuthors: " + "no authors";
+				
+				return result;
+
+			} else {
+			
+			boolean initial = true;
+			while(rs.next()){
+				if(initial){
+					title = rs.getString("title");
+					edition_no = rs.getInt("edition_no");
+					numofcop = rs.getInt("numofcop");
+					numleft = rs.getInt("numleft");
+					initial = false; 
+				}
+				authors.add(rs.getString("surname"));
+				
+			}
+			String authorString = "";
+			initial = true;
+			for(String author: authors){
+				if(initial) {authorString = author.trim(); initial = false;}
+				else{authorString = authorString + ", " + author.trim();} 
+			}
+			String result = ""
+	    			+ "Book Lookup:\n"
+	    			+ "\t" + isbn + ": " + title + "\n" 
+	    			+ "\tEdition: " + edition_no + " - Number of copies: " + numofcop + " - Copies left: " + numleft + "\n"
+					+ "\tAuthors: " + authorString;
+			
+			return result;
+			
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	return "Failed Book LookUp query";
     }
 
     public String showCatalogue() {
-	return "Show Catalogue Stub";
+    	
+		    	String query = ""
+				+ "SELECT DISTINCT title, edition_no, numofcop, numleft, isbn "
+				+ "FROM book_author "
+				+ "NATURAL JOIN book "
+				+ "NATURAL JOIN author "
+				+ "ORDER BY isbn";
+			
+		try {
+			ArrayList<Book> books = new ArrayList<Book>();
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery(query);
+			
+			String title = "";
+			int edition_no = -1;
+			int numofcop = -1;
+			int numleft = -1;
+			int isbn = -1;
+			
+			String result = "Show Catalogue:\n";
+			while(rs.next()){
+					title = rs.getString("title");
+					edition_no = rs.getInt("edition_no");
+					numofcop = rs.getInt("numofcop");
+					numleft = rs.getInt("numleft");
+					isbn = rs.getInt("isbn");
+					books.add(new Book(isbn, title, edition_no, numofcop, numleft));
+					
+			}
+			statement.close();
+			rs.close();
+			
+			for(Book book: books){
+				
+				query = ""
+				+ "SELECT surname " 
+				+ "FROM book_author "
+				+ "NATURAL JOIN author "
+				+ "WHERE isbn = " + book.getIsbn()
+				+ " ORDER BY authorseqno";
+				System.out.println("TEST");
+				statement = connection.createStatement();
+				rs = statement.executeQuery(query);
+				
+				result = result + ""
+						+ book.getIsbn() + ": " + book.getTitle() + "\n" 
+						+ "\tEdition: " + book.getEdition_no() + " - Number of copies: " + book.getNumofcop() + " - Copies left: " + book.getNumleft() + "\n"
+						+ "\tAuthors: ";
+				
+				while(rs.next()){							
+					result = result + rs.getString("surname") + ",";					
+				}
+				result = result + "\n";
+				
+			}
+				
+			
+			return result;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return "Failed Catalogue Query";
     }
 
     public String showLoanedBooks() {
@@ -56,15 +226,15 @@ public class LibraryModel {
 
     public void closeDBConnection() {
     }
-    
+
     public String deleteCus(int customerID) {
     	return "Delete Customer";
     }
-    
+
     public String deleteAuthor(int authorID) {
     	return "Delete Author";
     }
-    
+
     public String deleteBook(int isbn) {
     	return "Delete Book";
     }
