@@ -208,12 +208,60 @@ public class LibraryModel {
 
 
     public String showLoanedBooks() {
-	return "Show Loaned Books Stub";
+    	return "SHOW LOADNED BOOK";
     }
 
     public String showAuthor(int authorID) {
-	return "Show Author Stub";
+    	String query = ""
+    			+ "SELECT name, surname "
+    			+ "FROM author "
+    			+ "WHERE authorid = " + authorID;
+
+    	try {
+    		Author author = new Author(authorID,"No name", "No surname");
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+    		String name = "";
+    		String surname = "";
+
+    		String result = "Show Author:\n";
+    		while(rs.next()){
+    			author.setName(rs.getString("name"));
+    			author.setSurname(rs.getString("surname"));
+
+  
+    		}
+    		statement.close();
+    		rs.close();
+
+
+
+    			query = ""
+    					+ "SELECT isbn, title "
+    					+ "FROM book_author "
+    					+ "NATURAL JOIN book "
+    					+ "WHERE authorid = " + authorID
+    					+ " ORDER BY isbn";
+    			statement = connection.createStatement();
+    			rs = statement.executeQuery(query);
+
+    			result = result + ""
+    					+ "\t" + authorID + " - " + author.getName().trim() + " " + author.getSurname() +  "\n"
+    					+ "\tBooks Written:" + "\n";
+
+    				while(rs.next()){
+        				result = result + "\t\t" + rs.getString("isbn").trim() + " - " + rs.getString("title") + "\n";
+        			}
+
+    				return result;	
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed ShowAuthor Query";
     }
+
+
 
     public String showAllAuthors() {
 	return "Show All Authors Stub";
