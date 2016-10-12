@@ -229,13 +229,10 @@ public class LibraryModel {
     		while(rs.next()){
     			author.setName(rs.getString("name"));
     			author.setSurname(rs.getString("surname"));
-
   
     		}
     		statement.close();
     		rs.close();
-
-
 
     			query = ""
     					+ "SELECT isbn, title "
@@ -264,7 +261,40 @@ public class LibraryModel {
 
 
     public String showAllAuthors() {
-	return "Show All Authors Stub";
+    	String query = ""
+    			+ "SELECT authorid, name, surname "
+    			+ "FROM author "
+    			+ "ORDER BY authorid" ;
+
+    	try {
+    		ArrayList<Author> authors = new ArrayList<Author>();
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+
+
+    		String result = "Show All Authors:\n";
+    		while(rs.next()){
+    			int authorid = rs.getInt("authorid");
+    			String name = rs.getString("name");
+    			String surname = rs.getString("surname");
+    			
+    			authors.add(new Author(authorid, name, surname));
+  
+    		}
+    		for(Author author: authors){
+    			result = result + "\t" + author.getAuthorId() + ": " + author.getSurname() + "," + author.getName() + "\n";
+    		}
+    		statement.close();
+    		rs.close();
+    		
+    		return result;
+
+    		
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed ShowAuthor Query";
     }
 
     public String showCustomer(int customerID) {

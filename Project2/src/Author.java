@@ -29,10 +29,10 @@ public class Author {
 	}
 
 	public String getName() {
-		return name;
+		return name.trim();
 	}
 
 	public String getSurname() {
-		return surname;
+		return surname.trim();
 	}
 }
