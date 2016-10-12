@@ -29,44 +29,44 @@ public class LibraryModel {
 
 		e.printStackTrace();
 	}
-
+	
 	String url = "jdbc:postgresql://db.ecs.vuw.ac.nz/" + userid + "_jdbc";
 	try {
-		connection = DriverManager.getConnection(url, userid, password);
+		connection = DriverManager.getConnection(url, userid, password); 
 	} catch (SQLException e){
 		e.printStackTrace();
 	}
 	System.out.print("DATABASE CONNECT");
     }
-
+    
     /**
      * Querys a book based on an isbn number and returns the title, edition_no, numofcop, surnames of authors, numleft
      * @param isbn
      * @return
      */
     public String bookLookup(int isbn) {
-
+   
     	    	String query = ""
     			+ "SELECT title, edition_no, numofcop, surname, numleft "
     			+ "FROM book_author "
     			+ "NATURAL JOIN book "
     			+ "NATURAL JOIN author "
-    			+ "WHERE isbn = " + isbn
+    			+ "WHERE isbn = " + isbn 
     			+ "ORDER BY authorseqno";
-
+      	
     	try {
 			Statement statement = connection.createStatement();
 			ResultSet rs = statement.executeQuery(query);
-
-
-
+			
+			
+			
 			String title = "";
 			int edition_no = -1;
 			int numofcop = -1;
 			int numleft = -1;
-			ArrayList<String> authors = new ArrayList<String>();
-
-
+			ArrayList<String> authors = new ArrayList<String>(); 
+			
+			
 			/**
 			 * Check for authorless books, if none do full query
 			 */
@@ -77,7 +77,7 @@ public class LibraryModel {
 		    			+ "WHERE isbn = " + isbn;
 				statement = connection.createStatement();
 				rs = statement.executeQuery(query);
-
+				
 				if(!rs.isBeforeFirst()){
 					return "no such ISBN: " + isbn;
 				}
@@ -89,14 +89,14 @@ public class LibraryModel {
 				}
 				String result = ""
 		    			+ "Book Lookup:\n"
-		    			+ "\t" + isbn + ": " + title + "\n"
+		    			+ "\t" + isbn + ": " + title + "\n" 
 		    			+ "\tEdition: " + edition_no + " - Number of copies: " + numofcop + " - Copies left: " + numleft + "\n"
 						+ "\tAuthors: " + "no authors";
-
+				
 				return result;
 
 			} else {
-
+			
 			boolean initial = true;
 			while(rs.next()){
 				if(initial){
@@ -104,25 +104,25 @@ public class LibraryModel {
 					edition_no = rs.getInt("edition_no");
 					numofcop = rs.getInt("numofcop");
 					numleft = rs.getInt("numleft");
-					initial = false;
+					initial = false; 
 				}
 				authors.add(rs.getString("surname"));
-
+				
 			}
 			String authorString = "";
 			initial = true;
 			for(String author: authors){
 				if(initial) {authorString = author.trim(); initial = false;}
-				else{authorString = authorString + ", " + author.trim();}
+				else{authorString = authorString + ", " + author.trim();} 
 			}
 			String result = ""
 	    			+ "Book Lookup:\n"
-	    			+ "\t" + isbn + ": " + title + "\n"
+	    			+ "\t" + isbn + ": " + title + "\n" 
 	    			+ "\tEdition: " + edition_no + " - Number of copies: " + numofcop + " - Copies left: " + numleft + "\n"
 					+ "\tAuthors: " + authorString;
-
+			
 			return result;
-
+			
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -130,10 +130,7 @@ public class LibraryModel {
 	return "Failed Book LookUp query";
     }
 
-    /**
-     * returns every single book in the database, and there authors
-     * @return
-     */
+
     public String showCatalogue() {
 
     	String query = ""
@@ -168,30 +165,28 @@ public class LibraryModel {
     		for(Book book: books){
 
     			query = ""
-    					+ "SELECT surname "
+    					+ "SELECT surname " 
     					+ "FROM book_author "
     					+ "NATURAL JOIN author "
     					+ "WHERE isbn = " + book.getIsbn()
     					+ " ORDER BY authorseqno";
+    			System.out.println("TEST");
     			statement = connection.createStatement();
     			rs = statement.executeQuery(query);
 
     			result = result + ""
-    					+ book.getIsbn() + ": " + book.getTitle() + "\n"
+    					+ book.getIsbn() + ": " + book.getTitle() + "\n" 
     					+ "\tEdition: " + book.getEdition_no() + " - Number of copies: " + book.getNumofcop() + " - Copies left: " + book.getNumleft() + "\n"
     					+ "\tAuthors: ";
     			if(!rs.isBeforeFirst()){
     				result = result + "No author";
     			} else{
-    				while(rs.next()){
-        				result = result + rs.getString("surname").trim() + ", ";
-        			}
-
+    				while(rs.next()){							
+        				result = result + rs.getString("surname").trim() + ",";					
+        			}	
+    				
     			}
-    			if(result.substring(result.length()-2).equals(", ")){
-    				result = result.substring(0, result.length()-2);
-    			}
-
+    			
     			result = result + "\n";
 
     		}
@@ -203,9 +198,9 @@ public class LibraryModel {
     	}
     	return "Failed Catalogue Query";
     }
-
-
-
+    
+    
+    
 
     public String showLoanedBooks() {
 	return "Show Loaned Books Stub";
