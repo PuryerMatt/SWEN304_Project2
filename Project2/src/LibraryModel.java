@@ -208,7 +208,10 @@ public class LibraryModel {
 
 
 
-
+    /**
+     * Shows all the loaned books, there authors and the customers that are borrowing the books
+     * @return
+     */
     public String showLoanedBooks() {
     	String query = ""
     			+ "SELECT isbn, customerid "
@@ -302,11 +305,10 @@ public class LibraryModel {
         			}
     			}
 
-
-
     		}
-    		String result = "Show Loaned books: \n";
+
     		//We have everything we need to print the result now
+    		String result = "Show Loaned books: \n";
     		for(LoanedBook loanedBook: loanedBooks){
     			result = result + "\n"
     					+ loanedBook.getIsbn() + ": " + loanedBook.getTitle() + "\n"
@@ -315,6 +317,7 @@ public class LibraryModel {
     					for(Author author : loanedBook.getAuthors()){
     						 result = result + author.getSurname().trim() + ", ";
     					}
+
     					result = result + "\n\tBorrowers:\n";
     					for(Customer borrower : loanedBook.getBorrowers()){
     						result = result + "\t\t" + borrower.getCustomerId() + ": " + borrower.getLastName().trim() + ", " + borrower.getFirstName().trim() + " - " + borrower.getCity() + "\n";
@@ -523,7 +526,15 @@ public class LibraryModel {
 	return "Return Book Stub";
     }
 
+    /**
+     * Exit function
+     */
     public void closeDBConnection() {
+    	try {
+			connection.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
     }
 
     public String deleteCus(int customerID) {
