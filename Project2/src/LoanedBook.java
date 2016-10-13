@@ -4,7 +4,6 @@ public class LoanedBook extends Book {
 
 	private ArrayList<Customer> borrowers;
 	private ArrayList<Author> authors;
-	private int tempCust;
 
 	public LoanedBook(int isbn, String title, int editionNo, int numOfCop, int numLeft) {
 		super(isbn, title, editionNo, numOfCop, numLeft);

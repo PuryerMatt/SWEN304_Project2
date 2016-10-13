@@ -206,8 +206,6 @@ public class LibraryModel {
     	return "Failed Catalogue Query";
     }
 
-
-
     /**
      * Shows all the loaned books, there authors and the customers that are borrowing the books
      * @return
@@ -331,6 +329,11 @@ public class LibraryModel {
     	return "Failed ShowAuthor Query";
     }
 
+    /**
+     * Retrieves an authors name, surname and the books they've written based off an id
+     * @param authorID
+     * @return
+     */
     public String showAuthor(int authorID) {
     	String query = ""
     			+ "SELECT name, surname "
@@ -382,8 +385,10 @@ public class LibraryModel {
     	return "Failed ShowAuthor Query";
     }
 
-
-
+    /**
+     * Retrieves every author in the database
+     * @return
+     */
     public String showAllAuthors() {
     	String query = ""
     			+ "SELECT authorid, name, surname "
@@ -421,6 +426,11 @@ public class LibraryModel {
     	return "Failed ShowAuthor Query";
     }
 
+    /**
+     * Shows a customers first/last name, their city and the books they are borrowing based off there id
+     * @param customerID
+     * @return
+     */
     public String showCustomer(int customerID) {
     	String query = ""
     			+ "SELECT f_name, l_name, city "
@@ -432,10 +442,6 @@ public class LibraryModel {
     		Statement statement = connection.createStatement();
     		ResultSet rs = statement.executeQuery(query);
 
-    		String name = "";
-    		String surname = "";
-    		String city = "";
-
     		String result = "Show Customer:\n";
     		if(!rs.isBeforeFirst()){
 				return "invalid customerID";
@@ -445,7 +451,6 @@ public class LibraryModel {
 	    			customer.setLastName(rs.getString("l_name"));
 	    			customer.setFirstName(rs.getString("f_name"));
 	    			customer.setCity(rs.getString("city"));
-
 
 	    		}
 			}
@@ -476,9 +481,13 @@ public class LibraryModel {
     	} catch (SQLException e) {
     		e.printStackTrace();
     	}
-    	return "Failed ShowAuthor Query";
+    	return "Failed ShowCustomer Query";
     }
 
+    /**
+     * Shows all the customers in the database
+     * @return
+     */
     public String showAllCustomers() {
     	String query = ""
     			+ "SELECT customerid, l_name, f_name, city "
@@ -517,10 +526,121 @@ public class LibraryModel {
     	return "Failed ShowAuthor Query";
     }
 
-    public String borrowBook(int isbn, int customerID,
-			     int day, int month, int year) {
-	return "Borrow Book Stub";
+    /**
+     * Checks to see if the customer and books exists (and that there are copies available to borrow),
+     * then checks if the customer has'nt already borrowed the book. If everything is fine the relevent
+     * details will be added to the cust_book table and the relevent tuple in the book table wil have
+     * one deducted from the numleft column.
+     * @param isbn
+     * @param customerID
+     * @param day
+     * @param month
+     * @param year
+     * @return
+     */
+    public String borrowBook(int isbn, int customerID, int day, int month, int year) {
+    	String query = ""
+    			+ "SELECT l_name, f_name "
+    			+ "FROM customer "
+    			+ "WHERE customerid = " + customerID;
+
+    	try {
+
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+    		String lastName = "";
+    		String firstName = "";
+    		//Check if customer exists
+    		if(!rs.isBeforeFirst()){
+				return "No such customer ID : " + customerID;
+			} else {
+				while(rs.next()){
+					lastName = rs.getString("l_name");
+					firstName = rs.getString("f_name");
+				}
+			}
+    		statement.close();
+    		rs.close();
+
+    		query = ""
+        			+ "SELECT title "
+        			+ "FROM book "
+        			+ "WHERE isbn = " + isbn + " "
+        			+ "AND numleft > 0";
+
+    		statement = connection.createStatement();
+    		rs = statement.executeQuery(query);
+
+    		String bookTitle = "";
+    		//Check if book exists and
+    		if(!rs.isBeforeFirst()){
+				return "Book not available for booking: " + isbn;
+			} else {
+				while(rs.next()){
+					bookTitle = rs.getString("title");
+				}
+			}
+    		statement.close();
+    		rs.close();
+
+    		query = ""
+        			+ "SELECT * "
+        			+ "FROM cust_book "
+        			+ "WHERE customerid = " + customerID + " "
+        			+ "AND isbn = " + isbn;
+
+    		statement = connection.createStatement();
+    		rs = statement.executeQuery(query);
+
+    		//Check if book already borrowed by customer
+    		if(rs.isBeforeFirst()){
+				return "Book: " + isbn + ", is already being borrowed by the customer";
+			}
+    		statement.close();
+    		rs.close();
+
+
+    		String update = ""
+    				+ "INSERT INTO cust_book (isbn, duedate, customerid) "
+    				+ "VALUES ('" + isbn + "', '"+year+ "-" + month + "-" + day +"', '"+ customerID +"')";
+    		statement = connection.createStatement();
+
+    		//0 = failure, 1 = success
+    		int updateResult = statement.executeUpdate(update);
+
+    		if(updateResult != 1){
+    			return "book could not be borrowed (problem with insert)";
+    		} else  {
+    			statement.close();
+
+    			update = ""
+        				+ "UPDATE book SET numleft = numleft-1 "
+        				+ "WHERE isbn = " + isbn;
+    			statement = connection.createStatement();
+
+    			updateResult = statement.executeUpdate(update);
+    			if(updateResult != 1){
+    				return "Failed to alter number of books availble to borrow";
+    			} else {
+    				return "Borrow Book:\n"
+    						+ "\tBook: " + isbn + " (" + bookTitle.trim() + ")\n"
+    						+ "\tLoaned to: " + customerID + " (" + firstName.trim() + " " + lastName.trim() + ")\n"
+    						+ "\tDue Date: " + day + "," + month + "," + year;
+    			}
+
+    		}
+
+
+
+
+
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed borrowBook Query";
     }
+
 
     public String returnBook(int isbn, int customerid) {
 	return "Return Book Stub";
