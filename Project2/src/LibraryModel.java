@@ -226,10 +226,14 @@ public class LibraryModel {
     		String surname = "";
 
     		String result = "Show Author:\n";
-    		while(rs.next()){
-    			author.setName(rs.getString("name"));
-    			author.setSurname(rs.getString("surname"));
-  
+    		if(!rs.isBeforeFirst()){
+				return "invalid authorID";
+    		} else{
+	    		while(rs.next()){
+	    			author.setName(rs.getString("name"));
+	    			author.setSurname(rs.getString("surname"));
+	    			
+	    		}
     		}
     		statement.close();
     		rs.close();
@@ -251,7 +255,7 @@ public class LibraryModel {
         				result = result + "\t\t" + rs.getString("isbn").trim() + " - " + rs.getString("title") + "\n";
         			}
 
-    				return result;	
+    				return result;
     	} catch (SQLException e) {
     		e.printStackTrace();
     	}
@@ -278,19 +282,19 @@ public class LibraryModel {
     			int authorid = rs.getInt("authorid");
     			String name = rs.getString("name");
     			String surname = rs.getString("surname");
-    			
+
     			authors.add(new Author(authorid, name, surname));
-  
+
     		}
     		for(Author author: authors){
     			result = result + "\t" + author.getAuthorId() + ": " + author.getSurname() + "," + author.getName() + "\n";
     		}
     		statement.close();
     		rs.close();
-    		
+
     		return result;
 
-    		
+
     	} catch (SQLException e) {
     		e.printStackTrace();
     	}
@@ -298,7 +302,61 @@ public class LibraryModel {
     }
 
     public String showCustomer(int customerID) {
-	return "Show Customer Stub";
+    	String query = ""
+    			+ "SELECT f_name, l_name, city "
+    			+ "FROM customer "
+    			+ "WHERE customerid = " + customerID;
+
+    	try {
+    		Customer customer = new Customer(customerID,"No name","no surname","No city");
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+    		String name = "";
+    		String surname = "";
+    		String city = "";
+
+    		String result = "Show Customer:\n";
+    		if(!rs.isBeforeFirst()){
+				return "invalid customerID";
+			} else {
+	    		while(rs.next()){
+	    			customer.setCustomerId(customerID);
+	    			customer.setLastName(rs.getString("l_name"));
+	    			customer.setFirstName(rs.getString("f_name"));
+	    			customer.setCity(rs.getString("city"));
+	
+	
+	    		}
+			}
+    		statement.close();
+    		rs.close();
+
+    			query = ""
+    					+ "SELECT isbn, title "
+    					+ "FROM cust_book "
+    					+ "NATURAL JOIN book "
+    					+ "WHERE customerid = " + customerID
+    					+ " ORDER BY isbn";
+    			statement = connection.createStatement();
+    			rs = statement.executeQuery(query);
+
+    			result = result + ""
+    					+ "\t" + customerID + " - " + customer.getLastName().trim() + " " + customer.getFirstName().trim() + " - " + customer.getCity() + "\n";
+    				if(!rs.isBeforeFirst()){
+    					result = result + "\t(no books borrowed)";
+    				} else {
+    					result = result + "\tBooks Borrowed:" + "\n";
+	    				while(rs.next()){
+	        				result = result + "\t\t" + rs.getString("isbn").trim() + " - " + rs.getString("title").trim() + "\n";
+	        			}
+    				}
+
+    				return result;
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed ShowAuthor Query";
     }
 
     public String showAllCustomers() {
