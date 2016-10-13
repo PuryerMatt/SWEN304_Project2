@@ -643,7 +643,79 @@ public class LibraryModel {
 
 
     public String returnBook(int isbn, int customerid) {
-	return "Return Book Stub";
+    	String query = ""
+    			+ "SELECT * "
+    			+ "FROM cust_book "
+    			+ "WHERE isbn = " + isbn + " "
+    			+ "AND customerid = " + customerid;
+
+    	try {
+
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+
+    		//Check if book is being borrowed
+    		if(!rs.isBeforeFirst()){
+				return "Book (isbn =" + isbn +  ") is not being borrowed by customer: " + customerid;
+			} 
+    		statement.close();
+    		rs.close();
+
+    		query = ""
+        			+ "SELECT * "
+        			+ "FROM book "
+        			+ "WHERE isbn = " + isbn + " ";
+
+    		statement = connection.createStatement();
+    		rs = statement.executeQuery(query);
+
+
+    		//Check if book exists in book table
+    		if(!rs.isBeforeFirst()){
+				return "Book does not exist in the book table";
+			} 
+    		statement.close();
+    		rs.close();
+
+    		
+        	String delete = ""
+			+ "DELETE "
+			+ "FROM cust_book "
+			+ "WHERE isbn = " + isbn + " "
+			+ "AND customerid = " + customerid;
+
+        	statement = connection.createStatement();
+
+    		//0 = failure, 1 = success
+    		int deleteResult = statement.executeUpdate(delete);
+    		
+    		//check if book was successfully removed from cust_book table
+    		if(deleteResult != 1){
+    			return "unable to delete booking from cust_book table ";
+    		} 
+    		statement.close();
+    		
+    		String update = ""
+    				+ "UPDATE book SET numleft = numleft+1 "
+    				+ "WHERE isbn = " + isbn;
+			statement = connection.createStatement();
+
+			int updateResult = statement.executeUpdate(update);
+			
+			//check if book was successfully updated in book table
+			if(updateResult != 1){
+				return "Failed to alter number of books availble to borrow";
+			} else {
+				return "Return book:\n"
+						+ "\tBook: " + isbn + " returned for customer " + customerid;
+
+			}
+
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed returnBook Query";
     }
 
     /**
