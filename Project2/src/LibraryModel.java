@@ -360,7 +360,41 @@ public class LibraryModel {
     }
 
     public String showAllCustomers() {
-	return "Show All Customers Stub";
+    	String query = ""
+    			+ "SELECT customerid, l_name, f_name, city "
+    			+ "FROM customer "
+    			+ "ORDER BY customerid" ;
+
+    	try {
+    		ArrayList<Customer> customers = new ArrayList<Customer>();
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+
+
+    		String result = "Show All Customers:\n";
+    		while(rs.next()){
+    			int customerid = rs.getInt("customerid");
+    			String firstName = rs.getString("f_name");
+    			String lastName = rs.getString("l_name");
+    			String city = rs.getString("city");
+
+    			customers.add(new Customer(customerid, firstName, lastName, city));
+
+    		}
+    		for(Customer customer: customers){
+    			result = result + "\t" + customer.getCustomerId() + ": " + customer.getLastName().trim() + ", " + customer.getFirstName().trim() + " - " + customer.getCity() +  "\n";
+    		}
+    		statement.close();
+    		rs.close();
+
+    		return result;
+
+
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed ShowAuthor Query";
     }
 
     public String borrowBook(int isbn, int customerID,
