@@ -641,7 +641,14 @@ public class LibraryModel {
     	return "Failed borrowBook Query";
     }
 
-
+    /**
+     * Checks to see if the book is bveing borrowed by the customer and exists,
+     * if yes it removes the book from cust_book and increments the relevent numleft
+     * column in book.
+     * @param isbn
+     * @param customerid
+     * @return
+     */
     public String returnBook(int isbn, int customerid) {
     	String query = ""
     			+ "SELECT * "
@@ -658,7 +665,7 @@ public class LibraryModel {
     		//Check if book is being borrowed
     		if(!rs.isBeforeFirst()){
 				return "Book (isbn =" + isbn +  ") is not being borrowed by customer: " + customerid;
-			} 
+			}
     		statement.close();
     		rs.close();
 
@@ -674,11 +681,11 @@ public class LibraryModel {
     		//Check if book exists in book table
     		if(!rs.isBeforeFirst()){
 				return "Book does not exist in the book table";
-			} 
+			}
     		statement.close();
     		rs.close();
 
-    		
+
         	String delete = ""
 			+ "DELETE "
 			+ "FROM cust_book "
@@ -689,20 +696,20 @@ public class LibraryModel {
 
     		//0 = failure, 1 = success
     		int deleteResult = statement.executeUpdate(delete);
-    		
+
     		//check if book was successfully removed from cust_book table
     		if(deleteResult != 1){
     			return "unable to delete booking from cust_book table ";
-    		} 
+    		}
     		statement.close();
-    		
+
     		String update = ""
     				+ "UPDATE book SET numleft = numleft+1 "
     				+ "WHERE isbn = " + isbn;
 			statement = connection.createStatement();
 
 			int updateResult = statement.executeUpdate(update);
-			
+
 			//check if book was successfully updated in book table
 			if(updateResult != 1){
 				return "Failed to alter number of books availble to borrow";
@@ -729,15 +736,126 @@ public class LibraryModel {
 		}
     }
 
+    /**
+     * If a customer exist and is'nt borrowing a book, delete them
+     * @param customerID
+     * @return
+     */
     public String deleteCus(int customerID) {
-    	return "Delete Customer";
+    	String query = ""
+    			+ "SELECT * "
+    			+ "FROM cust_book "
+    			+ "WHERE customerid = " + customerID;
+
+    	try {
+
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+
+    		//Check if customer is borrowing a book
+    		if(rs.isBeforeFirst()){
+				return "Cannot delete customer as they are borrowing a book";
+			}
+    		statement.close();
+    		rs.close();
+
+    		String delete = ""
+        			+ "DELETE "
+        			+ "FROM customer "
+        			+ "WHERE customerid = " + customerID;
+
+    		statement = connection.createStatement();
+
+    		int deleteResult = statement.executeUpdate(delete);
+
+    		//check if customer was successfully removed from the database
+    		if(deleteResult != 1){
+    			return "unable to delete customer ";
+    		}  else {
+    			return "Customer delete:\n"
+						+ "\tCustomer deleted (ID: "+ customerID + ")";
+
+			}
+
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed delete Customer Query";
     }
 
+    /**
+     * Deletes an author based on their ID
+     * @param authorID
+     * @return
+     */
     public String deleteAuthor(int authorID) {
-    	return "Delete Author";
+    	String delete = ""
+    			+ "DELETE "
+    			+ "FROM author "
+    			+ "WHERE authorid = " + authorID;
+
+    	try {
+
+    		Statement statement = connection.createStatement();
+
+    		int deleteResult = statement.executeUpdate(delete);
+
+    		//check if author was successfully deleted
+    		if(deleteResult != 1){
+    			return "unable to delete author ";
+    		}  else {
+    			return "Author delete:\n"
+						+ "\tAuthor deleted (ID: "+ authorID + ")";
+
+			}
+
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed delete Author Query";
     }
 
     public String deleteBook(int isbn) {
-    	return "Delete Book";
+    	String query = ""
+    			+ "SELECT * "
+    			+ "FROM cust_book "
+    			+ "WHERE isbn = " + isbn;
+
+    	try {
+
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+
+    		//Check if book is being borrowed
+    		if(rs.isBeforeFirst()){
+				return "Book can't be deleted as a copy is being borrowed";
+			}
+    		statement.close();
+    		rs.close();
+
+    		String delete = ""
+        			+ "DELETE "
+        			+ "FROM book "
+        			+ "WHERE isbn = " + isbn;
+
+    		statement = connection.createStatement();
+
+    		int deleteResult = statement.executeUpdate(delete);
+
+    		//check if book was successfully removed from the database
+    		if(deleteResult != 1){
+    			return "unable to delete book ";
+    		}  else {
+    			return "Book delete:\n"
+						+ "\tBook deleted (ISBN: "+ isbn + ")";
+
+			}
+
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed delete book Query";
     }
 }
