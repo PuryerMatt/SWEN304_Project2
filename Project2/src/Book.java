@@ -2,16 +2,18 @@
 public class Book {
 	private int isbn;
 	private String title;
-	private int edition_no;
-	private int numofcop;
-	private int numleft;
+	private int editionNo;
+	private int numOfCop;
+	private int numLeft;
+
+
 
 	public Book(int i, String t, int e, int numo, int numl){
 		isbn = i;
 		title = t;
-		edition_no = e;
-		numofcop = numo;
-		numleft = numl;
+		editionNo = e;
+		numOfCop = numo;
+		numLeft = numl;
 	}
 
 	public int getIsbn() {
@@ -22,15 +24,35 @@ public class Book {
 		return title;
 	}
 
-	public int getEdition_no() {
-		return edition_no;
+	public int getEditionNo() {
+		return editionNo;
 	}
 
-	public int getNumofcop() {
-		return numofcop;
+	public int getNumOfCop() {
+		return numOfCop;
 	}
 
-	public int getNumleft() {
-		return numleft;
+	public int getNumLeft() {
+		return numLeft;
+	}
+
+	public void setIsbn(int isbn) {
+		this.isbn = isbn;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public void setEditionNo(int edition_no) {
+		this.editionNo = edition_no;
+	}
+
+	public void setNumOfCop(int numOfCop) {
+		this.numOfCop = numOfCop;
+	}
+
+	public void setNumleft(int numLeft) {
+		this.numLeft = numLeft;
 	}
 }

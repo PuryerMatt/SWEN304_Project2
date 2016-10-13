@@ -12,6 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.*;
 
@@ -178,7 +180,7 @@ public class LibraryModel {
 
     			result = result + ""
     					+ book.getIsbn() + ": " + book.getTitle() + "\n"
-    					+ "\tEdition: " + book.getEdition_no() + " - Number of copies: " + book.getNumofcop() + " - Copies left: " + book.getNumleft() + "\n"
+    					+ "\tEdition: " + book.getEditionNo() + " - Number of copies: " + book.getNumOfCop() + " - Copies left: " + book.getNumLeft()+ "\n"
     					+ "\tAuthors: ";
     			if(!rs.isBeforeFirst()){
     				result = result + "No author";
@@ -208,7 +210,122 @@ public class LibraryModel {
 
 
     public String showLoanedBooks() {
-    	return "SHOW LOADNED BOOK";
+    	String query = ""
+    			+ "SELECT isbn, customerid "
+    			+ "FROM cust_book "
+    			+ "ORDER By isbn";
+
+    	try {
+    		ArrayList<LoanedBook> loanedBooks = new ArrayList<LoanedBook>();
+    		Statement statement = connection.createStatement();
+    		ResultSet rs = statement.executeQuery(query);
+
+
+    		if(!rs.isBeforeFirst()){
+    			return "No books loaned";
+    		} else{
+    			while(rs.next()){
+    				int isbn = rs.getInt("isbn");
+    				int customerId = rs.getInt("customerid");
+
+    				//check if book already added, if so add customer to that book (book would already have at least one borrower at this point)
+    				boolean preAdded = false;
+    				for(LoanedBook storedBook: loanedBooks){
+    					if(storedBook.getIsbn() == isbn){
+    						storedBook.getBorrowers().add(new Customer(customerId, "No LastName", "No FirstName", "no City"));
+    						preAdded = true;
+    						break;
+    					}
+    				}
+    				//book not yet added to list, add book to list along with the customer
+    				if(preAdded == false){
+    					LoanedBook book = new LoanedBook(isbn, "no title", -1, -1, -1);
+    					book.getBorrowers().add(new Customer(customerId, "No LastName", "No FirstName", "no City"));
+    					loanedBooks.add(book);
+    				}
+
+
+    			}
+    		}
+    		statement.close();
+    		rs.close();
+
+    		//At this point we have a list of books, for each book we have a list of borrowers
+    		for(LoanedBook loanedBook : loanedBooks){
+
+    			//for each book, we want to query its details
+    			query = ""
+    					+ "SELECT title, edition_no, numofcop, numleft "
+    					+ "FROM book "
+    					+ "WHERE isbn = " + loanedBook.getIsbn();
+    			statement = connection.createStatement();
+    			rs = statement.executeQuery(query);
+    			if(!rs.isBeforeFirst()){
+    				return "No books from loaned books exist in books";
+    			} else{
+    				while(rs.next()){
+    					loanedBook.setTitle(rs.getString("title"));
+    					loanedBook.setEditionNo(rs.getInt("edition_no"));
+    					loanedBook.setNumOfCop(rs.getInt("numofcop"));
+    					loanedBook.setNumleft(rs.getInt("numleft"));
+    				}
+    			}
+
+    			//For each book we want to query its authors
+    			query = ""
+    					+ "SELECT authorid, name, surname "
+    					+ "FROM author "
+    					+ "NATURAL JOIN book_author "
+    					+ "WHERE isbn = " + loanedBook.getIsbn()
+    					+ " ORDER By authorseqno";
+    			statement = connection.createStatement();
+    			rs = statement.executeQuery(query);
+    			while(rs.next()){
+    				int authorId = rs.getInt("authorid");
+    				String name = rs.getString("name");
+    				String surname = rs.getString("surname");
+    				loanedBook.getAuthors().add(new Author(authorId,name,surname));
+    			}
+
+    			//For each book we want to query its borrowers which we gathered prior
+    			for(Customer borrower: loanedBook.getBorrowers()){
+    				query = ""
+        					+ "SELECT l_name, f_name, city "
+        					+ "FROM customer "
+        					+ "WHERE customerid = " + borrower.getCustomerId();
+        			statement = connection.createStatement();
+        			rs = statement.executeQuery(query);
+        			while(rs.next()){
+        				borrower.setLastName(rs.getString("l_name"));
+        				borrower.setFirstName(rs.getString("f_name"));
+        				borrower.setCity(rs.getString("city"));
+        			}
+    			}
+
+
+
+    		}
+    		String result = "Show Loaned books: \n";
+    		//We have everything we need to print the result now
+    		for(LoanedBook loanedBook: loanedBooks){
+    			result = result + "\n"
+    					+ loanedBook.getIsbn() + ": " + loanedBook.getTitle() + "\n"
+    					+ "\tEdition: "  + loanedBook.getEditionNo() + " - Number of copies: " + loanedBook.getNumOfCop() + " - Copies left: " + loanedBook.getNumLeft() + "\n"
+    					+ "\tAuthors: ";
+    					for(Author author : loanedBook.getAuthors()){
+    						 result = result + author.getSurname().trim() + ", ";
+    					}
+    					result = result + "\n\tBorrowers:\n";
+    					for(Customer borrower : loanedBook.getBorrowers()){
+    						result = result + "\t\t" + borrower.getCustomerId() + ": " + borrower.getLastName().trim() + ", " + borrower.getFirstName().trim() + " - " + borrower.getCity() + "\n";
+    					}
+    		}
+    		return result;
+
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    	return "Failed ShowAuthor Query";
     }
 
     public String showAuthor(int authorID) {
@@ -232,7 +349,7 @@ public class LibraryModel {
 	    		while(rs.next()){
 	    			author.setName(rs.getString("name"));
 	    			author.setSurname(rs.getString("surname"));
-	    			
+
 	    		}
     		}
     		statement.close();
@@ -325,8 +442,8 @@ public class LibraryModel {
 	    			customer.setLastName(rs.getString("l_name"));
 	    			customer.setFirstName(rs.getString("f_name"));
 	    			customer.setCity(rs.getString("city"));
-	
-	
+
+
 	    		}
 			}
     		statement.close();
